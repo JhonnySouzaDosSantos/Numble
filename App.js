@@ -1,86 +1,165 @@
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
-import { StyleSheet, Text, View, FlatList, Pressable  } from "react-native";
+import { useState, useEffect } from "react";
+import { StyleSheet, Text, View, FlatList, Pressable, Dimensions } from "react-native";
 
 export default function App() {
-  const [aut, setAut] = useState(Array(12).fill(0)); 
+  const [aut, setAut] = useState(Array(12).fill(0));
+  const [mud, setMud] = useState(Array(20).fill("#191D32"));
+  const [bord, setBord] = useState(Array(20).fill(Dimensions.get("window").width * 0.008));
 
-  const clicar=(i)=>{ 
-    const newAut = [...aut]; 
-    newAut[i] = 10;          
-    setAut(newAut);
-  }
-  const segurar=(i)=>{ 
-    const newAut = [...aut]; 
-    newAut[i] = 10;          
-    setAut(newAut);
-  }
-  const soltar=(i)=>{ 
-    const newAut = [...aut]; 
-    newAut[i] = 0;          
-    setAut(newAut);
+
+  const [numeros, setNumeros] = useState(
+    Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      temp: 0,
+      valor: 0,
+      texto: "",
+    }))
+  );
+
+  const pegar = (a) => {
+    setNumeros((prev) => {
+      const copia = [...prev];
+      for (let i = 0; i < copia.length; i++) {
+        if (copia[i].temp === 0) {
+          copia[i] = {
+            ...copia[i],
+            temp: 1,
+            valor: 1,
+            texto: a.toString(),
+          };
+          break;
+        }
+      }
+      return copia;
+    });
+  };
+
+  const deletar = () => {
+    setNumeros((prev) => {
+      const copia = [...prev];
+      const achar = copia.map(item => item.temp).lastIndexOf(1);
+
+      if (achar !== -1) {
+        copia[achar] = {
+          ...copia[achar],
+          temp: 0,
+          valor: 0,
+          texto: "",
+        };
+      }
+      return copia;
+    });
+  };
+
+  const confirmar = () => {
+
   }
 
-  const dados = [
-    {id: '1', nome: 'joao'},
-    {id: '2', nome: 'joao'},
-    {id: '3', nome: 'joao'},
-  ]
-  
+
+  useEffect(() => {
+    const newMud = Array(numeros.length).fill("#191D32");
+    const newBord = Array(numeros.length).fill(Dimensions.get("window").width * 0.008);
+    const achar = numeros.findIndex(item => item.temp === 0);
+    if (achar != -1) {
+      newMud[achar] = "#282F44";
+      newBord[achar] = Dimensions.get("window").width * 0.015;
+    }
+    setMud(newMud);
+    setBord(newBord);
+  }, [numeros]);
+
+  const clicar = (i) => {
+    const newAut = [...aut];
+    newAut[i] = 6;
+    setAut(newAut);
+  };
+  const segurar = (i) => {
+    const newAut = [...aut];
+    newAut[i] = 6;
+    setAut(newAut);
+  };
+  const soltar = (i) => {
+    const newAut = [...aut];
+    newAut[i] = 0;
+    setAut(newAut);
+  };
+
+  const bot = [
+    { id: "7", type: "number" },
+    { id: "8", type: "number" },
+    { id: "9", type: "number" },
+    { id: "4", type: "number" },
+    { id: "5", type: "number" },
+    { id: "6", type: "number" },
+    { id: "1", type: "number" },
+    { id: "2", type: "number" },
+    { id: "3", type: "number" },
+    { id: "⌫", type: "delete" },
+    { id: "0", type: "number" },
+    { id: "✓", type: "confirm" },
+  ];
+
   return (
     <View style={styles.container}>
       <View style={styles.numerosAd}>
         <FlatList
-          data={dados}
-          renderItem={({item, index}) => (
-            <Pressable style={styles.adv}><Text>{index + 1}</Text></Pressable>
-          )}
-          keyExtractor={(item) => item.id}
-          />
+          style={styles.flatlist}
+          data={numeros}
+          numColumns={4}
+          renderItem={({ item, index }) => {
+            return (
+              <View style={styles.bera}>
+                <Pressable
+                  style={[
+                    styles.adv,
+                    { borderColor: mud[index], borderWidth: bord[index], },
+                  ]}
+                >
+                  <Text style={styles.texto1}>{item.texto}</Text>
+                </Pressable>
+              </View>
+            );
+          }}
+          keyExtractor={(item) => item.id.toString()}
+        />
       </View>
 
       <View style={styles.botoes}>
         <View style={styles.botoesA}>
-        <Pressable style={[styles.nums, { top: aut[0] }]} onPressIn={() => clicar(0)} onLongPress={() => segurar(0)} onPressOut={() => soltar(0)}>
-          <Text style={styles.num}>0</Text>
-        </Pressable>
-        <Pressable style={[styles.nums, { top: aut[1] }]} onPressIn={() => clicar(1)} onLongPress={() => segurar(1)} onPressOut={() => soltar(1)}>
-          <Text style={styles.num}>1</Text>
-        </Pressable>
-        <Pressable style={[styles.nums, { top: aut[2] }]} onPressIn={() => clicar(2)} onLongPress={() => segurar(2)} onPressOut={() => soltar(2)}>
-          <Text style={styles.num}>2</Text>
-        </Pressable>
-        <Pressable style={[styles.nums, { top: aut[3] }]} onPressIn={() => clicar(3)} onLongPress={() => segurar(3)} onPressOut={() => soltar(3)}>
-          <Text style={styles.num}>3</Text>
-        </Pressable>
-        <Pressable style={[styles.nums, { top: aut[4] }]} onPressIn={() => clicar(4)} onLongPress={() => segurar(4)} onPressOut={() => soltar(4)}>
-          <Text style={styles.num}>4</Text>
-        </Pressable>
-        <Pressable style={[styles.nums, { backgroundColor: '#36B300', width: '25%', top: aut[5] }]} onPressIn={() => clicar(5)} onLongPress={() => segurar(5)} onPressOut={() => soltar(5)}>
-          <Text style={styles.num}>✔</Text>
-        </Pressable>
-      </View>
-
-      {/* Segundo grupo de botões */}
-      <View style={styles.botoesB}>
-        <Pressable style={[styles.nums, { top: aut[6] }]} onPressIn={() => clicar(6)} onLongPress={() => segurar(6)} onPressOut={() => soltar(6)}>
-          <Text style={styles.num}>5</Text>
-        </Pressable>
-        <Pressable style={[styles.nums, { top: aut[7] }]} onPressIn={() => clicar(7)} onLongPress={() => segurar(7)} onPressOut={() => soltar(7)}>
-          <Text style={styles.num}>6</Text>
-        </Pressable>
-        <Pressable style={[styles.nums, { top: aut[8] }]} onPressIn={() => clicar(8)} onLongPress={() => segurar(8)} onPressOut={() => soltar(8)}>
-          <Text style={styles.num}>7</Text>
-        </Pressable>
-        <Pressable style={[styles.nums, { top: aut[9] }]} onPressIn={() => clicar(9)} onLongPress={() => segurar(9)} onPressOut={() => soltar(9)}>
-          <Text style={styles.num}>8</Text>
-        </Pressable>
-        <Pressable style={[styles.nums, { top: aut[10] }]} onPressIn={() => clicar(10)} onLongPress={() => segurar(10)} onPressOut={() => soltar(10)}>
-          <Text style={styles.num}>9</Text>
-        </Pressable>
-        <Pressable style={[styles.nums, { backgroundColor: '#94000C', width: '25%', top: aut[11] }]} onPressIn={() => clicar(11)} onLongPress={() => segurar(11)} onPressOut={() => soltar(11)}>
-          <Text style={styles.num}>X</Text>
-        </Pressable>
+          <FlatList
+            style={styles.flatlist}
+            data={bot}
+            numColumns={3}
+            renderItem={({ item, index }) => (
+              <View style={styles.bot}>
+                <Pressable
+                  style={[
+                    styles.num,
+                    item.type === "delete" && styles.deleteButton,
+                    item.type === "confirm" && styles.confirmButton,
+                    { top: aut[index] },
+                  ]}
+                  onPress={() => {
+                    if (item.type === "delete") {
+                      deletar();
+                    } else if (item.type === "confirm") {
+                      confirmar();
+                    }
+                    else {
+                      pegar(item.id);
+                    }
+                  }}
+                  onPressIn={() => clicar(index)}
+                  onLongPress={() => segurar(index)}
+                  onPressOut={() => soltar(index)}
+                >
+                  <Text style={styles.numText}>{item.id}</Text>
+                </Pressable>
+              </View>
+            )}
+            keyExtractor={(item) => item.id.toString()}
+          />
         </View>
       </View>
       <StatusBar style="auto" hidden={true} />
@@ -91,71 +170,92 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#E0FBFC",
     alignItems: "center",
     justifyContent: "space-between",
   },
 
+  bera: {
+    flex: 1,
+    aspectRatio: 1,
+    width: "20%",
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 4,
+    marginVertical: 5,
+  },
+
+  deleteButton: {
+    backgroundColor: "#8B0000",
+    borderColor: "#FF0000",
+  },
+
+  confirmButton: {
+    backgroundColor: "#006400",
+    borderColor: "#00FF00",
+  },
+
   numerosAd: {
     top: "5%",
-    flex: 0.6,
-    borderWidth: 1,
+    flex: 0.53,
     width: "90%",
   },
 
   adv: {
-    height: '20%',
-    width: '20%',
-    borderWidth: 5,
+    height: "100%",
+    width: "100%",
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
+  flatlist: {
+    width: "100%",
+    flex: 1,
+    padding: "7%",
+    paddingBottom: "15%",
   },
 
   botoes: {
-    flex: 0.24,
+    flex: 0.4,
     width: "100%",
-    flexDirection: "collumn",
+    justifyContent: "center",
     alignItems: "center",
+    padding: "3%",
   },
 
   botoesA: {
-    height: "40%",
-    width: "50%",
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 6,
+    width: "70%",
   },
 
-  botoesB: {
-    height: "40%",
-    width: "50%",
-    alignItems: "center",
+  bot: {
+    flex: 1,
+    aspectRatio: 1,
     justifyContent: "center",
-    flexDirection: "row",
-    gap: 6,
-  },
-
-  nums: {
-    width: "28%",
     alignItems: "center",
-    justifyContent: "center",
-    height: "70%",
-    borderRadius: 10,
-    backgroundColor: "#B5B5B5",
-    shadowColor: "#000",
-    shadowOffset: { width: 1, height: 5 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
-    elevation: 10,
-    borderWidth: 3,
-    borderColor: "black",
-    
   },
 
   num: {
-    color: "white",
-    fontSize: 30,
+    width: "90%",
+    height: "90%",
+    borderRadius: 15,
+    backgroundColor: "#3C896D",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
-  
+  numText: {
+    fontSize: Dimensions.get("window").width * 0.07,
+    color: "white",
+    fontWeight: "600",
+    textAlignVertical: "center",
+  },
+
+  texto1: {
+    fontSize: Dimensions.get("window").width * 0.07,
+    color: "#252627",
+    fontWeight: "600",
+    textAlignVertical: "center",
+    textAlign: "center"
+  }
 });
