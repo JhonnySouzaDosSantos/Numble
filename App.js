@@ -4,6 +4,7 @@ import { StyleSheet, Text, View, FlatList, Pressable, Dimensions } from "react-n
 
 export default function App() {
   const [aut, setAut] = useState(Array(12).fill(0));
+  const [b1, setB1] = useState(Array(12).fill(Dimensions.get("window").width * 0.015))
   const [mud, setMud] = useState(Array(20).fill("#191D32"));
   const [bord, setBord] = useState(Array(20).fill(Dimensions.get("window").width * 0.008));
 
@@ -39,7 +40,6 @@ export default function App() {
     setNumeros((prev) => {
       const copia = [...prev];
       const achar = copia.map(item => item.temp).lastIndexOf(1);
-
       if (achar !== -1) {
         copia[achar] = {
           ...copia[achar],
@@ -63,25 +63,34 @@ export default function App() {
     const achar = numeros.findIndex(item => item.temp === 0);
     if (achar != -1) {
       newMud[achar] = "#282F44";
-      newBord[achar] = Dimensions.get("window").width * 0.015;
+      newBord[achar] = Dimensions.get("window").width * 0.017;
     }
     setMud(newMud);
     setBord(newBord);
   }, [numeros]);
 
   const clicar = (i) => {
+    const newB1 = [...b1];
     const newAut = [...aut];
-    newAut[i] = 6;
+    newB1[i] = Dimensions.get("window").width * 0
+    newAut[i] = Dimensions.get("window").width * 0.001
+    setB1(newB1);
     setAut(newAut);
   };
   const segurar = (i) => {
     const newAut = [...aut];
-    newAut[i] = 6;
+    const newB1 = [...b1];
+    newB1[i] = Dimensions.get("window").width * 0
+    newAut[i] = Dimensions.get("window").width * 0.001
+    setB1(newB1);
     setAut(newAut);
   };
   const soltar = (i) => {
+    const newB1 = [...b1];
+    newB1[i] = Dimensions.get("window").width * 0.015
     const newAut = [...aut];
     newAut[i] = 0;
+    setB1(newB1);
     setAut(newAut);
   };
 
@@ -113,7 +122,7 @@ export default function App() {
                 <Pressable
                   style={[
                     styles.adv,
-                    { borderColor: mud[index], borderWidth: bord[index], },
+                    { borderColor: mud[index], borderWidth: Dimensions.get("window").width * 0.008,borderBottomWidth: bord[index] },
                   ]}
                 >
                   <Text style={styles.texto1}>{item.texto}</Text>
@@ -138,7 +147,7 @@ export default function App() {
                     styles.num,
                     item.type === "delete" && styles.deleteButton,
                     item.type === "confirm" && styles.confirmButton,
-                    { top: aut[index] },
+                    { top: aut[index], borderBottomWidth: b1[index] },
                   ]}
                   onPress={() => {
                     if (item.type === "delete") {
@@ -187,12 +196,12 @@ const styles = StyleSheet.create({
 
   deleteButton: {
     backgroundColor: "#8B0000",
-    borderColor: "#FF0000",
+    borderColor: "#420000ff",
   },
 
   confirmButton: {
     backgroundColor: "#006400",
-    borderColor: "#00FF00",
+    borderColor: '#002500ff',
   },
 
   numerosAd: {
@@ -204,7 +213,7 @@ const styles = StyleSheet.create({
   adv: {
     height: "100%",
     width: "100%",
-    borderRadius: 10,
+    borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -238,10 +247,11 @@ const styles = StyleSheet.create({
   num: {
     width: "90%",
     height: "90%",
-    borderRadius: 15,
+    borderRadius: 10,
     backgroundColor: "#3C896D",
     justifyContent: "center",
     alignItems: "center",
+    borderColor: "#214e3eff",
   },
 
   numText: {
