@@ -1,13 +1,27 @@
 import { StatusBar } from "expo-status-bar";
 import { useState, useEffect } from "react";
-import { StyleSheet, Text, View, FlatList, Pressable, Dimensions } from "react-native";
+import { StyleSheet, Text, View, FlatList, Pressable, Dimensions, Alert } from "react-native";
+
+// Função para gerar o código secreto com 4 números aleatórios únicos entre 0 e 9
+const gerarCodigoSecreto = () => {
+  const numeros = [];
+  while (numeros.length < 4) {
+    const n = Math.floor(Math.random() * 10);
+    if (!numeros.includes(n)) {
+      numeros.push(n);
+    }
+  }
+  return numeros;
+};
 
 export default function App() {
   const [aut, setAut] = useState(Array(12).fill(0));
-  const [b1, setB1] = useState(Array(12).fill(Dimensions.get("window").width * 0.015))
+  const [b1, setB1] = useState(Array(12).fill(Dimensions.get("window").width * 0.015));
   const [mud, setMud] = useState(Array(20).fill("#191D32"));
   const [bord, setBord] = useState(Array(20).fill(Dimensions.get("window").width * 0.008));
-
+  const [op, setOp] = useState(Array(20).fill("#191D32"));
+  const [liberados, setLiberados] = useState(4);
+  const [codigoSecreto, setCodigoSecreto] = useState(gerarCodigoSecreto());
 
   const [numeros, setNumeros] = useState(
     Array.from({ length: 20 }, (_, i) => ({
@@ -15,18 +29,19 @@ export default function App() {
       temp: 0,
       valor: 0,
       texto: "",
+      md: 0,
     }))
   );
 
   const pegar = (a) => {
     setNumeros((prev) => {
       const copia = [...prev];
-      for (let i = 0; i < copia.length; i++) {
-        if (copia[i].temp === 0) {
+      for (let i = liberados - 4; i < liberados; i++) {
+        if (copia[i].temp === 0 && copia[i].md === 0) {
           copia[i] = {
             ...copia[i],
             temp: 1,
-            valor: 1,
+            valor: parseInt(a),
             texto: a.toString(),
           };
           break;
@@ -39,56 +54,112 @@ export default function App() {
   const deletar = () => {
     setNumeros((prev) => {
       const copia = [...prev];
-      const achar = copia.map(item => item.temp).lastIndexOf(1);
-      if (achar !== -1) {
-        copia[achar] = {
-          ...copia[achar],
-          temp: 0,
-          valor: 0,
-          texto: "",
-        };
+      for (let i = liberados - 1; i >= liberados - 4; i--) {
+        if (copia[i].temp === 1 && copia[i].md === 0) {
+          copia[i] = {
+            ...copia[i],
+            temp: 0,
+            valor: 0,
+            texto: "",
+          };
+          break;
+        }
       }
       return copia;
     });
   };
 
+  const reiniciarJogo = () => {
+    setCodigoSecreto(gerarCodigoSecreto());
+    setNumeros(Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      temp: 0,
+      valor: 0,
+      texto: "",
+      md: 0,
+    })));
+    setLiberados(4);
+  };
+
   const confirmar = () => {
+    const inicioTentativa = liberados - 4;
+    const camposTentativa = numeros.slice(inicioTentativa, liberados);
+    const preenchidos = camposTentativa.filter((n) => n.temp === 1);
+    
+    if (preenchidos.length !== 4) return;
 
-  }
+    const tentativa = preenchidos.map((n) => parseInt(n.texto));
+    
+    // Verificar se acertou
+    const acertou = tentativa.every((num, i) => num === codigoSecreto[i]);
+    
+    if (acertou) {
+      Alert.alert("Parabéns!", "Você acertou o código!", [
+        { text: "OK", onPress: reiniciarJogo }
+      ]);
+      return;
+    }
 
+    // Se não acertou e ainda há tentativas
+    if (liberados < numeros.length) {
+      setLiberados((prev) => prev + 4);
+    } else {
+      Alert.alert("Fim do jogo", `O código era: ${codigoSecreto.join('')}`, [
+        { text: "Jogar novamente", onPress: reiniciarJogo }
+      ]);
+    }
+
+    // Marcar apenas os campos da tentativa atual
+    setNumeros((prev) => {
+      const copia = [...prev];
+      for (let i = inicioTentativa; i < liberados; i++) {
+        copia[i] = { ...copia[i], md: 1 };
+      }
+      return copia;
+    });
+  };
+
+  useEffect(() => {
+    const newOp = numeros.map((item, index) => {
+      if (index >= liberados - 4 && index < liberados && item.md === 0) {
+        return "white";
+      } else {
+        return "#191D32";
+      }
+    });
+    setOp(newOp);
+  }, [numeros, liberados]);
 
   useEffect(() => {
     const newMud = Array(numeros.length).fill("#191D32");
     const newBord = Array(numeros.length).fill(Dimensions.get("window").width * 0.008);
-    const achar = numeros.findIndex(item => item.temp === 0);
-    if (achar != -1) {
+    const achar = numeros.findIndex(item => 
+      item.temp === 0 && 
+      item.md === 0 && 
+      item.id >= liberados - 4 && 
+      item.id < liberados
+    );
+    if (achar !== -1) {
       newMud[achar] = "#282F44";
       newBord[achar] = Dimensions.get("window").width * 0.017;
     }
     setMud(newMud);
     setBord(newBord);
-  }, [numeros]);
+  }, [numeros, liberados]);
 
   const clicar = (i) => {
     const newB1 = [...b1];
     const newAut = [...aut];
-    newB1[i] = Dimensions.get("window").width * 0
-    newAut[i] = Dimensions.get("window").width * 0.001
+    newB1[i] = 0;
+    newAut[i] = Dimensions.get("window").width * 0.001;
     setB1(newB1);
     setAut(newAut);
   };
-  const segurar = (i) => {
-    const newAut = [...aut];
-    const newB1 = [...b1];
-    newB1[i] = Dimensions.get("window").width * 0
-    newAut[i] = Dimensions.get("window").width * 0.001
-    setB1(newB1);
-    setAut(newAut);
-  };
+  const segurar = clicar;
   const soltar = (i) => {
     const newB1 = [...b1];
-    newB1[i] = Dimensions.get("window").width * 0.015
     const newAut = [...aut];
+    newB1[i] = Dimensions.get("window").width * 0.015;
     newAut[i] = 0;
     setB1(newB1);
     setAut(newAut);
@@ -116,20 +187,23 @@ export default function App() {
           style={styles.flatlist}
           data={numeros}
           numColumns={4}
-          renderItem={({ item, index }) => {
-            return (
-              <View style={styles.bera}>
-                <Pressable
-                  style={[
-                    styles.adv,
-                    { borderColor: mud[index], borderWidth: Dimensions.get("window").width * 0.008,borderBottomWidth: bord[index] },
-                  ]}
-                >
-                  <Text style={styles.texto1}>{item.texto}</Text>
-                </Pressable>
-              </View>
-            );
-          }}
+          renderItem={({ item, index }) => (
+            <View style={styles.bera}>
+              <Pressable
+                style={[
+                  styles.adv,
+                  {
+                    borderColor: mud[index],
+                    backgroundColor: op[index],
+                    borderWidth: Dimensions.get("window").width * 0.008,
+                    borderBottomWidth: bord[index],
+                  },
+                ]}
+              >
+                <Text style={styles.texto1}>{item.texto}</Text>
+              </Pressable>
+            </View>
+          )}
           keyExtractor={(item) => item.id.toString()}
         />
       </View>
@@ -137,7 +211,7 @@ export default function App() {
       <View style={styles.botoes}>
         <View style={styles.botoesA}>
           <FlatList
-            style={styles.flatlist}
+            style={styles.flatlist1}
             data={bot}
             numColumns={3}
             renderItem={({ item, index }) => (
@@ -154,8 +228,7 @@ export default function App() {
                       deletar();
                     } else if (item.type === "confirm") {
                       confirmar();
-                    }
-                    else {
+                    } else {
                       pegar(item.id);
                     }
                   }}
@@ -183,7 +256,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-
   bera: {
     flex: 1,
     aspectRatio: 1,
@@ -193,23 +265,19 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     marginVertical: 5,
   },
-
   deleteButton: {
     backgroundColor: "#8B0000",
     borderColor: "#420000ff",
   },
-
   confirmButton: {
     backgroundColor: "#006400",
     borderColor: '#002500ff',
   },
-
   numerosAd: {
     top: "5%",
     flex: 0.53,
     width: "90%",
   },
-
   adv: {
     height: "100%",
     width: "100%",
@@ -217,14 +285,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   flatlist: {
     width: "100%",
     flex: 1,
     padding: "7%",
     paddingBottom: "15%",
   },
-
+  flatlist1: {
+    width: "100%",
+    flex: 1,
+    padding: "7%",
+    paddingBottom: "115%",
+    marginBottom: "130%",
+  },
   botoes: {
     flex: 0.4,
     width: "100%",
@@ -232,18 +305,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: "3%",
   },
-
   botoesA: {
     width: "70%",
   },
-
   bot: {
     flex: 1,
     aspectRatio: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-
   num: {
     width: "90%",
     height: "90%",
@@ -253,14 +323,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderColor: "#214e3eff",
   },
-
   numText: {
     fontSize: Dimensions.get("window").width * 0.07,
     color: "white",
     fontWeight: "600",
     textAlignVertical: "center",
   },
-
   texto1: {
     fontSize: Dimensions.get("window").width * 0.07,
     color: "#252627",
