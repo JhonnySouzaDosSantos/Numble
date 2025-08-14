@@ -2,7 +2,6 @@ import { StatusBar } from "expo-status-bar";
 import { useState, useEffect } from "react";
 import { StyleSheet, Text, View, FlatList, Pressable, Dimensions, Alert } from "react-native";
 
-// Função para gerar o código secreto com 4 números aleatórios únicos entre 0 e 9
 const gerarCodigoSecreto = () => {
   const numeros = [];
   while (numeros.length < 4) {
@@ -22,6 +21,7 @@ export default function App() {
   const [op, setOp] = useState(Array(20).fill("#191D32"));
   const [liberados, setLiberados] = useState(4);
   const [codigoSecreto, setCodigoSecreto] = useState(gerarCodigoSecreto());
+  const [feedback, setFeedback] = useState(Array(20).fill(null));
 
   const [numeros, setNumeros] = useState(
     Array.from({ length: 20 }, (_, i) => ({
@@ -32,6 +32,24 @@ export default function App() {
       md: 0,
     }))
   );
+
+
+  const getCorTexto = (index) => {
+
+    if (numeros[index].md === 1 && feedback[index] === null && numeros[index].texto !== "") {
+      return "white";
+    }
+    return "#252627"; 
+  };
+
+
+  const getCorFundo = (index) => {
+    if (feedback[index] === 'verde') return '#4CAF50';  
+    if (feedback[index] === 'amarelo') return '#FFEB3B'; 
+    if (numeros[index].md === 1) return '#191D32';
+    if (index >= liberados - 4 && index < liberados) return 'white'; 
+    return '#121212'; 
+  };
 
   const pegar = (a) => {
     setNumeros((prev) => {
@@ -78,7 +96,39 @@ export default function App() {
       texto: "",
       md: 0,
     })));
+    setFeedback(Array(20).fill(null));
     setLiberados(4);
+  };
+
+  const calcularFeedback = (tentativa) => {
+    const novoFeedback = Array(4).fill(null);
+    const codigoRestante = [];
+    const tentativaRestante = [];
+    
+    for (let i = 0; i < 4; i++) {
+      if (tentativa[i] === codigoSecreto[i]) {
+        novoFeedback[i] = 'verde';
+      } else {
+        codigoRestante.push(codigoSecreto[i]);
+        tentativaRestante.push(tentativa[i]);
+      }
+    }
+    
+    
+    for (let i = 0; i < tentativaRestante.length; i++) {
+      const index = codigoRestante.indexOf(tentativaRestante[i]);
+      if (index !== -1) {
+        for (let j = 0; j < 4; j++) {
+          if (novoFeedback[j] === null && tentativa[j] === tentativaRestante[i]) {
+            novoFeedback[j] = 'amarelo';
+            codigoRestante.splice(index, 1);
+            break;
+          }
+        }
+      }
+    }
+    
+    return novoFeedback;
   };
 
   const confirmar = () => {
@@ -89,9 +139,19 @@ export default function App() {
     if (preenchidos.length !== 4) return;
 
     const tentativa = preenchidos.map((n) => parseInt(n.texto));
+    const novoFeedback = calcularFeedback(tentativa);
     
-    // Verificar se acertou
-    const acertou = tentativa.every((num, i) => num === codigoSecreto[i]);
+    
+    setFeedback(prev => {
+      const novo = [...prev];
+      for (let i = 0; i < 4; i++) {
+        novo[inicioTentativa + i] = novoFeedback[i];
+      }
+      return novo;
+    });
+
+    
+    const acertou = novoFeedback.every(f => f === 'verde');
     
     if (acertou) {
       Alert.alert("Parabéns!", "Você acertou o código!", [
@@ -100,7 +160,7 @@ export default function App() {
       return;
     }
 
-    // Se não acertou e ainda há tentativas
+    
     if (liberados < numeros.length) {
       setLiberados((prev) => prev + 4);
     } else {
@@ -109,7 +169,7 @@ export default function App() {
       ]);
     }
 
-    // Marcar apenas os campos da tentativa atual
+    
     setNumeros((prev) => {
       const copia = [...prev];
       for (let i = inicioTentativa; i < liberados; i++) {
@@ -120,15 +180,9 @@ export default function App() {
   };
 
   useEffect(() => {
-    const newOp = numeros.map((item, index) => {
-      if (index >= liberados - 4 && index < liberados && item.md === 0) {
-        return "white";
-      } else {
-        return "#191D32";
-      }
-    });
+    const newOp = numeros.map((_, index) => getCorFundo(index));
     setOp(newOp);
-  }, [numeros, liberados]);
+  }, [numeros, liberados, feedback]);
 
   useEffect(() => {
     const newMud = Array(numeros.length).fill("#191D32");
@@ -152,15 +206,6 @@ export default function App() {
     const newAut = [...aut];
     newB1[i] = 0;
     newAut[i] = Dimensions.get("window").width * 0.001;
-    setB1(newB1);
-    setAut(newAut);
-  };
-  const segurar = clicar;
-  const soltar = (i) => {
-    const newB1 = [...b1];
-    const newAut = [...aut];
-    newB1[i] = Dimensions.get("window").width * 0.015;
-    newAut[i] = 0;
     setB1(newB1);
     setAut(newAut);
   };
@@ -200,7 +245,9 @@ export default function App() {
                   },
                 ]}
               >
-                <Text style={styles.texto1}>{item.texto}</Text>
+                <Text style={[styles.texto1, { color: getCorTexto(index) }]}>
+                  {item.texto}
+                </Text>
               </Pressable>
             </View>
           )}
@@ -233,8 +280,14 @@ export default function App() {
                     }
                   }}
                   onPressIn={() => clicar(index)}
-                  onLongPress={() => segurar(index)}
-                  onPressOut={() => soltar(index)}
+                  onPressOut={() => {
+                    const newB1 = [...b1];
+                    const newAut = [...aut];
+                    newB1[index] = Dimensions.get("window").width * 0.015;
+                    newAut[index] = 0;
+                    setB1(newB1);
+                    setAut(newAut);
+                  }}
                 >
                   <Text style={styles.numText}>{item.id}</Text>
                 </Pressable>
@@ -331,9 +384,9 @@ const styles = StyleSheet.create({
   },
   texto1: {
     fontSize: Dimensions.get("window").width * 0.07,
-    color: "#252627",
     fontWeight: "600",
     textAlignVertical: "center",
-    textAlign: "center"
+    textAlign: "center",
+    includeFontPadding: false,
   }
 });
